@@ -1,0 +1,17 @@
+[hello_world]
+parser-v1 = true
+
+[hello_world.jobby]
+message="Let's see"
+
+[hello_world.otherjobby]
+message="I'll check this one too"
+consul_service_name = "otherjobby"
+
+[democratic_csi_zol_iscsi]
+_registry = "me"
+
+[democratic_csi_zol_iscsi.iscsi]
+datacenters = ["go-for-it"]
+resources.cpu = 500
+resources.memory = 256
