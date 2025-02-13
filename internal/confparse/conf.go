@@ -45,9 +45,13 @@ func ParseTOMLToJobs(reader io.Reader) (Jobs, error) {
 			if _, ok := jobArgs.(map[string]interface{}); !ok || jobName[0] == '_' {
 				continue
 			}
+			jobArgsAsDict := jobArgs.(map[string]interface{})
+			if _, ok := jobArgsAsDict["jobname"]; !ok {
+				jobArgsAsDict["jobname"] = jobName
+			}
 			jobs[jobName] = Job{
 				JobName: jobName,
-				Args:    jobArgs.(map[string]interface{}),
+				Args:    jobArgsAsDict,
 				Pack:    packArgs,
 			}
 		}

@@ -1,14 +1,11 @@
 package templating
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"strings"
-
-	"github.com/zclconf/go-cty/cty"
 )
 
 func toJson(in any) (string, error) {
@@ -19,62 +16,23 @@ func toJson(in any) (string, error) {
 	return string(rV), err
 }
 
-// getArg navigates through `data` using `in`, and returns a string representation
-// If the value is not a string, it is returned as an HCL-encoded string.
-func getArg(in any, data map[string]interface{}) (string, error) {
-	// Convert `in` to a string key
-	key, ok := in.(string)
-	if !ok {
-		return "", fmt.Errorf("key must be a string")
+func unquote(in template.HTML) (template.HTML, error) {
+	startIndex := 0
+	endIndex := len(in)
+	if in[0] == '"' {
+		startIndex += 1
 	}
-
-	// Lookup the value in `data`
-	val, exists := data[key]
-	if !exists {
-		return "", fmt.Errorf("key %q not found in data", key)
+	if in[len(in)-1] == '"' {
+		endIndex -= 1
 	}
-
-	// If the value is already a string, return it
-	if strVal, ok := val.(string); ok {
-		return strVal, nil
-	}
-
-	// Convert non-string values to HCL-compatible string
-	hclStr, err := convertToHCLString(val)
-	if err != nil {
-		return "", err
-	}
-
-	return hclStr, nil
+	return in[startIndex:endIndex], nil
 }
 
-// convertToHCLString converts an arbitrary Go value to an HCL-compatible string representation
-func convertToHCLString(v any) (string, error) {
-	// Convert the value to JSON first
-	jsonData, err := json.Marshal(v)
-	if err != nil {
-		return "", err
-	}
-
-	// Convert JSON to a cty.Value
-	ctyVal, err := json.Unmarshal(jsonData, cty.DynamicPseudoType)
-	if err != nil {
-		return "", err
-	}
-
-	// Encode the cty.Value as an HCL string
-	var buf bytes.Buffer
-	if err := json.WriteTo(&buf, ctyVal, json.CompactOptions()); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
 func helperFuncs() template.FuncMap {
 	return template.FuncMap{
-		"tojson": toJson,
-		"getarg": getArg,
-		"toHCL":  convertToHCLString,
+		"tojson":  toJson,
+		"getarg":  getArg,
+		"unquote": unquote,
 	}
 }
 

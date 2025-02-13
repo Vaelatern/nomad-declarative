@@ -31,27 +31,27 @@ job_arg_2 = "def"
 	expectedJobs := Jobs{
 		"job1": Job{
 			JobName: "job1",
-			Args:    JobArgs{"job_args_1": int64(123), "job_arg_2": "abc"},
+			Args:    JobArgs{"job_args_1": int64(123), "job_arg_2": "abc", "jobname": "job1"},
 			Pack:    PackSettings{"name": "pack1", "source": "https://github.com/example/example"},
 		},
 		"job2": Job{
 			JobName: "job2",
-			Args:    JobArgs{"job_args": int64(333)},
+			Args:    JobArgs{"job_args": int64(333), "jobname": "job2"},
 			Pack:    PackSettings{"name": "pack1", "source": "https://github.com/example/example"},
 		},
 		"job3": Job{
 			JobName: "job3",
-			Args:    JobArgs{"job_args_1": int64(456), "job_arg_2": "def"},
+			Args:    JobArgs{"job_args_1": int64(456), "job_arg_2": "def", "jobname": "job3"},
 			Pack:    PackSettings{"name": "pack2"},
 		},
 		"job4": Job{
 			JobName: "job4",
-			Args:    JobArgs{},
+			Args:    JobArgs{"jobname": "job4"},
 			Pack:    PackSettings{"name": "pack3"},
 		},
 		"job5": Job{
 			JobName: "job5",
-			Args:    JobArgs{},
+			Args:    JobArgs{"jobname": "job5"},
 			Pack:    PackSettings{"name": "pack1", "source": "https://github.com/example/example"},
 		},
 	}
