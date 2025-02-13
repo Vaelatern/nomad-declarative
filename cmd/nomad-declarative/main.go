@@ -7,10 +7,13 @@ import (
 	"os"
 	"path"
 
+	"github.com/Vaelatern/nomad-declarative/internal/confparse"
 	"github.com/Vaelatern/nomad-declarative/internal/templating"
 )
 
 func main() {
+	workDir := os.DirFS(".")
+
 	rootPath := "./testpacks"
 	pack := "gokapi"
 	srcRoot := path.Join(rootPath, pack, "templates")
@@ -18,19 +21,26 @@ func main() {
 	srcDir := os.DirFS(srcRoot)
 	sharedDir := os.DirFS(sharedRoot)
 	tpls, raws := templating.OutputFiles(srcDir)
-	fmt.Println(tpls)
-	fmt.Println(raws)
 
 	tpl, err := templating.Template(srcDir, sharedDir)
 	if err != nil {
 		log.Fatal(fmt.Errorf("Can't get template: %v", err))
 	}
+
+	a, err := workDir.Open("config.toml")
+	if err != nil {
+		log.Fatal(fmt.Errorf("Can't open config %v", err))
+	}
+
+	jobs, _ := confparse.ParseTOMLToJobs(a)
+	job := jobs["fileshare"]
+
 	for _, path := range tpls {
 		finalTpl, err := tpl.ParseFS(srcDir, path)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", path, err))
 		}
-		err = finalTpl.ExecuteTemplate(os.Stdout, path, []string{})
+		err = finalTpl.ExecuteTemplate(os.Stdout, path, job)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", path, err))
 		}

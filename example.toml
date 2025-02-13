@@ -15,3 +15,11 @@ _registry = "me"
 datacenters = ["go-for-it"]
 resources.cpu = 500
 resources.memory = 256
+
+[gokapi]
+
+[gokapi.fileshare]
+datacenters = ["dc1", "dc2"]
+image_source = "f0rc3/gokapi"
+image_version = "latest"
+resoures = {cpu = 500, memory = 512}
