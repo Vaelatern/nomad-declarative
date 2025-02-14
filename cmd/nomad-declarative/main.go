@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path"
+	"strings"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/Vaelatern/nomad-declarative/internal/confparse"
 	"github.com/Vaelatern/nomad-declarative/internal/templating"
@@ -40,9 +45,18 @@ func main() {
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", path, err))
 		}
-		err = finalTpl.ExecuteTemplate(os.Stdout, path, job)
+		var buffer bytes.Buffer
+		err = finalTpl.ExecuteTemplate(&buffer, path, job)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", path, err))
+		}
+		outPath := path[:len(path)-len(".tpl")]
+		if strings.HasSuffix(outPath, ".nomad") || strings.HasSuffix(outPath, ".hcl") {
+			formatted, diag := hclwrite.ParseConfig(buffer.Bytes(), "", hcl.Pos{Line: 1, Column: 1})
+			if diag.HasErrors() {
+				fmt.Printf("%v", fmt.Errorf("failed to parse HCL: %s", diag.Error()))
+			}
+			os.Stdout.Write(formatted.Bytes())
 		}
 	}
 
