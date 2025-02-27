@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/Vaelatern/nomad-declarative/internal/confparse"
@@ -46,36 +47,36 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		log.Fatal(fmt.Errorf("Can't get template: %v", err))
 	}
 
-	for _, path := range tpls {
-		finalTpl, err := tpl.ParseFS(packTemplates, path)
+	for _, filePath := range tpls {
+		finalTpl, err := tpl.ParseFS(packTemplates, filePath)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", path, err))
+			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", filePath, err))
 		}
 		var buffer bytes.Buffer
-		err = finalTpl.ExecuteTemplate(&buffer, path, job)
+		err = finalTpl.ExecuteTemplate(&buffer, filePath, job)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", path, err))
+			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
 		}
-		outPath := path[:len(path)-len(".tpl")]
+		outPath := filePath[:len(filePath)-len(".tpl")]
 		if strings.HasSuffix(outPath, ".nomad") || strings.HasSuffix(outPath, ".hcl") {
 			formatted, diag := hclwrite.ParseConfig(buffer.Bytes(), "", hcl.Pos{Line: 1, Column: 1})
 			if diag.HasErrors() {
 				fmt.Printf("%v", fmt.Errorf("failed to parse HCL: %s", diag.Error()))
 			}
-			fileWrite(path, formatted.Bytes())
+			fileWrite(path.Join(pack, filePath), formatted.Bytes())
 		}
 	}
 
-	for _, path := range raws {
-		fp, err := packTemplates.Open(path)
+	for _, filePath := range raws {
+		fp, err := packTemplates.Open(filePath)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't Copy %s: %v", path, err))
+			log.Fatal(fmt.Errorf("Can't Copy %s: %v", filePath, err))
 		}
 		output, err := io.ReadAll(fp)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't read all contents of %s: %v", path, err))
+			log.Fatal(fmt.Errorf("Can't read all contents of %s: %v", filePath, err))
 		}
-		fileWrite(path, output)
+		fileWrite(path.Join(pack, filePath), output)
 	}
 	return nil
 }
@@ -95,6 +96,9 @@ func main() {
 	jobs, _ := confparse.ParseTOMLToJobs(a)
 	for _, job := range jobs {
 		err := ParseJob(job, srcDir, func(name string, contents []byte) error {
+			os.Stdout.Write([]byte("****************************\n"))
+			os.Stdout.Write([]byte(name))
+			os.Stdout.Write([]byte("\n##\n"))
 			os.Stdout.Write(contents)
 			return nil
 		})
