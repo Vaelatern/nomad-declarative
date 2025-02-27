@@ -56,13 +56,18 @@ func internalTemplates(source fs.FS) []string {
 }
 
 func Template(source fs.FS, shared fs.FS) (*template.Template, error) {
+	if source == nil {
+		return nil, fmt.Errorf("Source template fs.FS is nil")
+	}
 	baseTemplate := template.New("base")
 	var err error // avoid shadowing baseTemplate
-	commonTemplates := internalTemplates(shared)
-	if len(commonTemplates) > 0 {
-		baseTemplate, err = baseTemplate.ParseFS(shared, commonTemplates...)
-		if err != nil {
-			return nil, fmt.Errorf("Can't get common templates: %v", err)
+	if shared != nil {
+		commonTemplates := internalTemplates(shared)
+		if len(commonTemplates) > 0 {
+			baseTemplate, err = baseTemplate.ParseFS(shared, commonTemplates...)
+			if err != nil {
+				return nil, fmt.Errorf("Can't get common templates: %v", err)
+			}
 		}
 	}
 	jobTemplates := internalTemplates(source)
@@ -81,8 +86,11 @@ func Template(source fs.FS, shared fs.FS) (*template.Template, error) {
 	return template, nil
 }
 
-func OutputFiles(source fs.FS) (finalTpls []string, finalRaws []string) {
-	_ = fs.WalkDir(source, ".", func(entry string, d fs.DirEntry, err error) error {
+func OutputFiles(source fs.FS) (finalTpls []string, finalRaws []string, err error) {
+	err = fs.WalkDir(source, ".", func(entry string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
@@ -98,6 +106,5 @@ func OutputFiles(source fs.FS) (finalTpls []string, finalRaws []string) {
 
 		return nil
 	})
-
 	return
 }
