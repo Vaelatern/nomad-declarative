@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"io/fs"
 	"strings"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 func toJson(in any) (string, error) {
@@ -81,6 +83,7 @@ func Template(source fs.FS, shared fs.FS) (*template.Template, error) {
 	template := baseTemplate.
 		Delims("[[", "]]").
 		Option("missingkey=error").
+		Funcs(sprig.FuncMap()).
 		Funcs(helperFuncs())
 
 	return template, nil

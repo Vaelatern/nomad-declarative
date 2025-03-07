@@ -19,6 +19,10 @@ import (
 )
 
 func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) error) error {
+	var jobToPass confparse.JobAsArgs
+	jobToPass.Pack = job.Pack
+	jobToPass.Args = job.Args
+	jobToPass.JobName = job.JobName
 	pack := job.Pack["name"].(string)
 
 	packRoot, err := fs.Sub(root, pack)
@@ -54,7 +58,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", filePath, err))
 		}
 		var buffer bytes.Buffer
-		err = finalTpl.ExecuteTemplate(&buffer, filePath, job)
+		err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
 		}

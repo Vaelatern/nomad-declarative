@@ -16,6 +16,12 @@ type Job struct {
 	Pack    PackSettings
 }
 
+type JobAsArgs struct {
+	JobName string
+	Args    map[string]interface{}
+	Pack    PackSettings
+}
+
 type Jobs map[string]Job
 
 // ParseTOMLToJobs parses a TOML input from an io.Reader and returns a map of Jobs.

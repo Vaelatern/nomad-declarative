@@ -12,11 +12,8 @@ import (
 
 // getArg retrieves a value from the `data` map using `in` as the key.
 // If the value is a string, it is returned directly; otherwise, it is converted into HCL format.
-func getArg(in any, data map[string]interface{}) (template.HTML, error) {
-	key, ok := in.(string)
-	if !ok {
-		return "", fmt.Errorf("key must be a string")
-	}
+func getArg(in string, data map[string]interface{}) (template.HTML, error) {
+	key := in
 
 	val, exists := data[key]
 	if !exists {
