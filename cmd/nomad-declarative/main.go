@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/Vaelatern/nomad-declarative/internal/confparse"
@@ -82,6 +83,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 }
 
 func main() {
+	outPath := "./output"
 	workDir := os.DirFS(".")
 
 	rootPath := "./testpacks"
@@ -96,10 +98,21 @@ func main() {
 	jobs, _ := confparse.ParseTOMLToJobs(a)
 	for _, job := range jobs {
 		err := ParseJob(job, srcDir, func(name string, contents []byte) error {
-			os.Stdout.Write([]byte("****************************\n"))
-			os.Stdout.Write([]byte(name))
-			os.Stdout.Write([]byte("\n##\n"))
-			os.Stdout.Write(contents)
+			tgtPath := filepath.Join(outPath, name)
+			tgtDirPath := filepath.Dir(tgtPath)
+			err := os.MkdirAll(tgtDirPath, 0755)
+			if err != nil {
+				return err
+			}
+			f, err := os.Create(tgtPath)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			_, err = f.Write(contents)
+			if err != nil {
+				return err
+			}
 			return nil
 		})
 		if err != nil {
