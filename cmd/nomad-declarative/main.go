@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -86,6 +87,33 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	return nil
 }
 
+func chooseConfigFile() string {
+	// Define the config flag
+	configPtr := flag.String("config", "", "path to config file")
+
+	// Parse the flags
+	flag.Parse()
+
+	// Default configFile value
+	var configFile string
+
+	// Check if --config flag was provided and has a value
+	if *configPtr != "" {
+		configFile = *configPtr
+	} else {
+		// Look for first non-flag argument
+		args := flag.Args() // Gets all non-flag arguments
+		if len(args) > 0 {
+			configFile = args[0]
+		} else {
+			// Set a default if no config specified (optional)
+			configFile = "config.toml"
+		}
+	}
+
+	return configFile
+}
+
 func main() {
 	outPath := "./output"
 	workDir := os.DirFS(".")
@@ -94,7 +122,7 @@ func main() {
 
 	srcDir := os.DirFS(rootPath)
 
-	a, err := workDir.Open("config.toml")
+	a, err := workDir.Open(chooseConfigFile())
 	if err != nil {
 		log.Fatal(fmt.Errorf("Can't open config %v", err))
 	}
