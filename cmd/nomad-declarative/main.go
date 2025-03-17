@@ -19,12 +19,25 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
+const DEFAULT_ORIGIN = "./packs"
+
 func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) error) error {
 	var jobToPass confparse.JobAsArgs
 	jobToPass.Pack = job.Pack
 	jobToPass.Args = job.Args
 	jobToPass.JobName = job.JobName
 	pack := job.Pack["name"].(string)
+	if job.Pack["origin-name"] != nil && job.Pack["origin-name"].(string) != "" {
+		pack = job.Pack["origin-name"].(string)
+	}
+	origin := DEFAULT_ORIGIN
+	if job.Pack["origin"] != nil && job.Pack["origin"].(string) != "" {
+		origin = job.Pack["origin-name"].(string)
+	}
+
+	if origin != DEFAULT_ORIGIN {
+		root = os.DirFS(origin)
+	}
 
 	packRoot, err := fs.Sub(root, pack)
 	if err != nil {
@@ -118,7 +131,7 @@ func main() {
 	outPath := "./output"
 	workDir := os.DirFS(".")
 
-	rootPath := "./testpacks"
+	rootPath := DEFAULT_ORIGIN
 
 	srcDir := os.DirFS(rootPath)
 

@@ -7,6 +7,10 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// Expected values for PackSettings keys:
+// name -- set automatically
+// origin -- Defaults to "./packs"
+// origin-name -- Defaults to the name set automatically
 type PackSettings map[string]interface{}
 type JobArgs map[string]interface{}
 
