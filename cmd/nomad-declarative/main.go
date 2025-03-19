@@ -13,10 +13,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Vaelatern/nomad-declarative/internal/confparse"
-	"github.com/Vaelatern/nomad-declarative/internal/templating"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+
+	"github.com/hairyhenderson/go-fsimpl"
+	"github.com/hairyhenderson/go-fsimpl/blobfs"
+	"github.com/hairyhenderson/go-fsimpl/filefs"
+	"github.com/hairyhenderson/go-fsimpl/gitfs"
+	"github.com/hairyhenderson/go-fsimpl/httpfs"
+
+	"github.com/Vaelatern/nomad-declarative/internal/confparse"
+	"github.com/Vaelatern/nomad-declarative/internal/templating"
 )
 
 const DEFAULT_ORIGIN = "./packs"
@@ -36,7 +43,16 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	}
 
 	if origin != DEFAULT_ORIGIN {
-		root = os.DirFS(origin)
+		mux := fsimpl.NewMux()
+		mux.Add(filefs.FS)
+		mux.Add(httpfs.FS)
+		mux.Add(blobfs.FS)
+		mux.Add(gitfs.FS)
+		fsys, err := mux.Lookup(origin)
+		if err != nil {
+			return err
+		}
+		root = fsys
 	}
 
 	packRoot, err := fs.Sub(root, pack)
