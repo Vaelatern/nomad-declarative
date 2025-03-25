@@ -172,7 +172,10 @@ func main() {
 		log.Fatal(fmt.Errorf("Can't open config %v", err))
 	}
 
-	jobs, _ := confparse.ParseTOMLToJobs(a)
+	jobs, err := confparse.ParseTOMLToJobs(a)
+	if err != nil {
+		log.Fatal(fmt.Errorf("Can't process config: %v", err))
+	}
 	for _, job := range jobs {
 		err := ParseJob(job, srcDir, func(name string, contents []byte) error {
 			tgtPath := filepath.Join(outPath, name)
