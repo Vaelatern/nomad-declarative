@@ -116,42 +116,58 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	return nil
 }
 
-func chooseConfigFile() string {
+func chooseInsAndOuts() (string, string) {
 	// Define the config flag
 	configPtr := flag.String("config", "", "path to config file")
+	outputPtr := flag.String("output", "", "dir to output under")
+
+	consumedConfigFileFromArgs := false
 
 	// Parse the flags
 	flag.Parse()
+	args := flag.Args() // Gets all non-flag arguments
 
-	// Default configFile value
 	var configFile string
+	var outputDir string
 
 	// Check if --config flag was provided and has a value
 	if *configPtr != "" {
 		configFile = *configPtr
 	} else {
 		// Look for first non-flag argument
-		args := flag.Args() // Gets all non-flag arguments
 		if len(args) > 0 {
 			configFile = args[0]
+			consumedConfigFileFromArgs = true
 		} else {
 			// Set a default if no config specified (optional)
 			configFile = "config.toml"
 		}
 	}
 
-	return configFile
+	if *outputPtr != "" {
+		outputDir = *outputPtr
+	} else {
+		if consumedConfigFileFromArgs && len(args) > 1 {
+			outputDir = args[1]
+		} else if !consumedConfigFileFromArgs && len(args) > 0 {
+			outputDir = args[0]
+		} else {
+			outputDir = "./output"
+		}
+	}
+
+	return configFile, outputDir
 }
 
 func main() {
-	outPath := "./output"
 	workDir := os.DirFS(".")
 
 	rootPath := DEFAULT_ORIGIN
 
 	srcDir := os.DirFS(rootPath)
 
-	a, err := workDir.Open(chooseConfigFile())
+	confFile, outPath := chooseInsAndOuts()
+	a, err := workDir.Open(confFile)
 	if err != nil {
 		log.Fatal(fmt.Errorf("Can't open config %v", err))
 	}
