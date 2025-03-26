@@ -39,7 +39,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	}
 	origin := DEFAULT_ORIGIN
 	if job.Pack["origin"] != nil && job.Pack["origin"].(string) != "" {
-		origin = job.Pack["origin-name"].(string)
+		origin = job.Pack["origin"].(string)
 	}
 
 	if origin != DEFAULT_ORIGIN {
@@ -50,7 +50,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		mux.Add(gitfs.FS)
 		fsys, err := mux.Lookup(origin)
 		if err != nil {
-			return err
+			return fmt.Errorf("Can't grab fsimpl filesystem: %v", err)
 		}
 		root = fsys
 	}
@@ -85,7 +85,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	for _, filePath := range tpls {
 		finalTpl, err := tpl.ParseFS(packTemplates, filePath)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't ParseFS on %s: %v", filePath, err))
+			log.Fatal(fmt.Errorf("Can't ParseFS in job %s @ %s, on %s: %v", job.JobName, origin, filePath, err))
 		}
 		var buffer bytes.Buffer
 		err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
