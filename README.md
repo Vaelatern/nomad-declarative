@@ -21,3 +21,27 @@ Packs have names. Packs have origins. Packs can have a different name at the ori
 Jobs have names. Those have to be unique in the output. That uniqueness is not enforced in the configuration file.
 
 If you have anything that needs to be templated based on your job name, just template it. It's fine.
+
+## Config file
+
+This is provided as toml. There is a top level dictionary, with "pack name" as the key. The second layer is "Job name." It is this second layer that must be unique.
+
+Parameters that alter how the pack is interpreted start with an underscore. Right now these are:
+
+### Pack
+
+- `_origin`
+- `_origin-name`
+- `_name` - this defaults to the pack name
+
+### Job
+
+Convention is the job name is passed automatically to the templates as `jobname` and datacenters as `datacenters`.
+
+Only `jobname` is automatically set.
+
+## Bug tracker
+
+- Problem: Can't pull packs from authenticated sources
+- Problem: Too much in cmd/
+	* Solution: Refactor mostly into `internal`
