@@ -1,0 +1,7 @@
+[artipie]
+_origin = "git+https://github.com/Vaelatern/declarative-nomad-jobs//packs"
+_origin-name = "artipie" # optional since this matches the pack name
+
+[artipie.basic-artifacts]
+datacenters = ["dc1"]
+resources = {cpu = 500, memory = 512}
