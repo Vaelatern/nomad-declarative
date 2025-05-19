@@ -2,7 +2,6 @@ package templating
 
 import (
 	"fmt"
-	"html/template"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -12,7 +11,7 @@ import (
 
 // getArg retrieves a value from the `data` map using `in` as the key.
 // If the value is a string, it is returned directly; otherwise, it is converted into HCL format.
-func getArg(in string, data map[string]interface{}) (template.HTML, error) {
+func getArg(in string, data map[string]interface{}) (string, error) {
 	key := in
 
 	val, exists := data[key]
@@ -26,7 +25,7 @@ func getArg(in string, data map[string]interface{}) (template.HTML, error) {
 		return "", err
 	}
 
-	return template.HTML(hclStr), nil
+	return (hclStr), nil
 }
 
 // convertToHCL converts a Go value into its natural HCL representation

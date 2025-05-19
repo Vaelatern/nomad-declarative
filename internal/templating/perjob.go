@@ -3,9 +3,9 @@ package templating
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/fs"
 	"strings"
+	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 )
@@ -18,7 +18,7 @@ func toJson(in any) (string, error) {
 	return string(rV), err
 }
 
-func unquote(in template.HTML) (template.HTML, error) {
+func unquote(in string) (string, error) {
 	startIndex := 0
 	endIndex := len(in)
 	if in[0] == '"' {

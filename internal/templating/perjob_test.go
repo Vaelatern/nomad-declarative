@@ -1,9 +1,9 @@
 package templating
 
 import (
-	"html/template"
 	"reflect"
 	"testing"
+	"text/template"
 )
 
 func Test_toJson(t *testing.T) {
