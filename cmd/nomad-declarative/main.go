@@ -73,7 +73,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 
 	tpls, raws, err := templating.OutputFiles(packTemplates)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error grabbing template output files: %v", err)
 	}
 
 	var tpl *template.Template
@@ -83,7 +83,8 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	}
 
 	for _, filePath := range tpls {
-		finalTpl, err := tpl.ParseFS(packTemplates, filePath)
+		curTpl, _ := tpl.Clone()
+		finalTpl, err := curTpl.ParseFS(packTemplates, filePath)
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't ParseFS in job %s @ %s, on %s: %v", job.JobName, origin, filePath, err))
 		}
@@ -96,7 +97,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		if strings.HasSuffix(outPath, ".nomad") || strings.HasSuffix(outPath, ".hcl") {
 			formatted, diag := hclwrite.ParseConfig(buffer.Bytes(), "", hcl.Pos{Line: 1, Column: 1})
 			if diag.HasErrors() {
-				fmt.Printf("%v", fmt.Errorf("failed to parse HCL: %s", diag.Error()))
+				fmt.Printf("%v", fmt.Errorf("failed to parse HCL in %s: %s\n\n%s", outPath, diag.Error(), buffer.Bytes()))
 			}
 			fileWrite(path.Join(pack, outPath), formatted.Bytes())
 		}
