@@ -35,6 +35,7 @@ func helperFuncs() template.FuncMap {
 		"tojson":  toJson,
 		"getarg":  getArg,
 		"unquote": unquote,
+		"tohcl":   convertToHCL,
 	}
 }
 
