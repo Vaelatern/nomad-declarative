@@ -99,7 +99,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 			if diag.HasErrors() {
 				fmt.Printf("%v", fmt.Errorf("failed to parse HCL in %s: %s\n\n%s", outPath, diag.Error(), buffer.Bytes()))
 			}
-			fileWrite(path.Join(pack, outPath), formatted.Bytes())
+			fileWrite(path.Join(job.JobName, outPath), formatted.Bytes())
 		}
 	}
 
@@ -112,7 +112,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		if err != nil {
 			log.Fatal(fmt.Errorf("Can't read all contents of %s: %v", filePath, err))
 		}
-		fileWrite(path.Join(pack, filePath), output)
+		fileWrite(path.Join(job.JobName, filePath), output)
 	}
 	return nil
 }
