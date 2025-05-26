@@ -29,6 +29,7 @@ type JobAsArgs struct {
 type Jobs map[string]Job
 
 // ParseTOMLToJobs parses a TOML input from an io.Reader and returns a map of Jobs.
+// It is important for later merging that there are no extra defaults set here.
 func ParseTOMLToJobs(reader io.Reader) (Jobs, error) {
 	// Load the entire TOML data into a generic map
 	var rawConfig map[string]map[string]interface{}
@@ -68,4 +69,58 @@ func ParseTOMLToJobs(reader io.Reader) (Jobs, error) {
 	}
 
 	return jobs, nil
+}
+
+func MergeJobs(a Jobs, override Jobs) Jobs {
+	result := make(Jobs)
+
+	// Copy all jobs from 'a' to result
+	for jobName, job := range a {
+		result[jobName] = Job{
+			JobName: job.JobName,
+			Args:    make(JobArgs),
+			Pack:    make(PackSettings),
+		}
+		// Copy Args
+		for k, v := range job.Args {
+			result[jobName].Args[k] = v
+		}
+		// Copy Pack
+		for k, v := range job.Pack {
+			result[jobName].Pack[k] = v
+		}
+	}
+
+	// Apply overrides
+	for jobName, overrideJob := range override {
+		// Get or initialize the job in result
+		job, exists := result[jobName]
+		if !exists {
+			job = Job{
+				JobName: overrideJob.JobName,
+				Args:    make(JobArgs),
+				Pack:    make(PackSettings),
+			}
+		}
+
+		// Override JobName if non-empty
+		if overrideJob.JobName != "" {
+			job.JobName = overrideJob.JobName
+		}
+
+		// Override Args
+		for k, v := range overrideJob.Args {
+			job.Args[k] = v
+		}
+
+		// Override Pack
+		for k, v := range overrideJob.Pack {
+			job.Pack[k] = v
+		}
+
+		// Reassign the modified job back to the map
+		result[jobName] = job
+	}
+
+	return result
 }
