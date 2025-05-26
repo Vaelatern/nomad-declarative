@@ -24,6 +24,7 @@ import (
 	"github.com/hairyhenderson/go-fsimpl/httpfs"
 
 	"github.com/Vaelatern/nomad-declarative/internal/confparse"
+	"github.com/Vaelatern/nomad-declarative/internal/submission"
 	"github.com/Vaelatern/nomad-declarative/internal/templating"
 )
 
@@ -118,8 +119,9 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	return nil
 }
 
-func chooseInsAndOuts() (string, string) {
+func chooseInsAndOuts() (string, string, bool) {
 	// Define the config flag
+	doExec := flag.Bool("execute", false, "self execute - run all scripts produced. Set your NOMAD_ADDR correctly first.")
 	configPtr := flag.String("config", "", "path to config file")
 	outputPtr := flag.String("output", "", "dir to output under")
 
@@ -158,7 +160,7 @@ func chooseInsAndOuts() (string, string) {
 		}
 	}
 
-	return configFile, outputDir
+	return configFile, outputDir, *doExec
 }
 
 func getJobs(workDir fs.FS, confFile string) (confparse.Jobs, error) {
@@ -221,7 +223,7 @@ func main() {
 
 	srcDir := os.DirFS(rootPath)
 
-	confFile, outPath := chooseInsAndOuts()
+	confFile, outPath, doExec := chooseInsAndOuts()
 	jobs, err := getJobs(workDir, confFile)
 	if err != nil {
 		log.Fatal(fmt.Errorf("Can't open and process config %v", err))
@@ -255,6 +257,13 @@ func main() {
 		})
 		if err != nil {
 			fmt.Println(fmt.Errorf("Failed to parse job %s: %v", job.JobName, err))
+		}
+	}
+
+	if doExec {
+		err := submission.ExecuteFilesAsync(outPath)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 }
