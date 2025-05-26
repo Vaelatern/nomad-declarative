@@ -240,9 +240,16 @@ func main() {
 				return err
 			}
 			defer f.Close()
-			_, err = f.Write(contents)
+			n, err := f.Write(contents)
 			if err != nil {
 				return err
+			}
+			// Make executable if a shebang
+			if n >= 2 && contents[0] == '#' && contents[1] == '!' {
+				err := os.Chmod(tgtPath, 0755)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
