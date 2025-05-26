@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -160,6 +161,59 @@ func chooseInsAndOuts() (string, string) {
 	return configFile, outputDir
 }
 
+func getJobs(workDir fs.FS, confFile string) (confparse.Jobs, error) {
+	info, err := fs.Stat(workDir, confFile)
+	if err != nil {
+		return nil, fmt.Errorf("can't stat path %s: %v", confFile, err)
+	}
+
+	if !info.IsDir() {
+		// Handle single file
+		f, err := workDir.Open(confFile)
+		if err != nil {
+			return nil, fmt.Errorf("can't open config %s: %v", confFile, err)
+		}
+		defer f.Close()
+		parsedJobs, err := confparse.ParseTOMLToJobs(f)
+		if err != nil {
+			return nil, fmt.Errorf("can't process config %s: %v", confFile, err)
+		}
+		return parsedJobs, nil
+	}
+
+	// Am a directory. Let's go a bit more complicated.
+	jobs := make(confparse.Jobs)
+
+	entries, err := fs.ReadDir(workDir, confFile)
+	if err != nil {
+		return nil, fmt.Errorf("can't read directory %s: %v", confFile, err)
+	}
+	var tomlFiles []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".toml") {
+			tomlFiles = append(tomlFiles, entry.Name())
+		}
+	}
+	sort.Strings(tomlFiles) // just make sure because last one wins the merge
+	subDir, err := fs.Sub(workDir, confFile)
+	if err != nil {
+		return nil, fmt.Errorf("Error grabbing subDir: %v", err)
+	}
+	for _, name := range tomlFiles {
+		f, err := subDir.Open(name)
+		if err != nil {
+			return nil, fmt.Errorf("can't open config file %s: %v", name, err)
+		}
+		parsedJobs, err := confparse.ParseTOMLToJobs(f)
+		f.Close()
+		if err != nil {
+			return nil, fmt.Errorf("can't process config file %s: %v", name, err)
+		}
+		jobs = confparse.MergeJobs(jobs, parsedJobs)
+	}
+	return jobs, nil
+}
+
 func main() {
 	workDir := os.DirFS(".")
 
@@ -168,15 +222,11 @@ func main() {
 	srcDir := os.DirFS(rootPath)
 
 	confFile, outPath := chooseInsAndOuts()
-	a, err := workDir.Open(confFile)
+	jobs, err := getJobs(workDir, confFile)
 	if err != nil {
-		log.Fatal(fmt.Errorf("Can't open config %v", err))
+		log.Fatal(fmt.Errorf("Can't open and process config %v", err))
 	}
 
-	jobs, err := confparse.ParseTOMLToJobs(a)
-	if err != nil {
-		log.Fatal(fmt.Errorf("Can't process config: %v", err))
-	}
 	for _, job := range jobs {
 		err := ParseJob(job, srcDir, func(name string, contents []byte) error {
 			tgtPath := filepath.Join(outPath, name)

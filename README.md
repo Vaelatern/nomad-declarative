@@ -40,6 +40,13 @@ Convention is the job name is passed automatically to the templates as `jobname`
 
 Only `jobname` is automatically set.
 
+## Config Directory
+
+This is like the config file but repeatedly for all files ending in `.toml`
+inside the given directory. There is no merging of values, you can overwrite
+any key or add new keys in subsequent files. There is no mechanism to Delete
+a key, you can only set it Empty. Last one wins.
+
 ## Bug tracker
 
 - Problem: Can't pull packs from authenticated sources
