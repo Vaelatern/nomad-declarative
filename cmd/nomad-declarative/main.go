@@ -142,10 +142,7 @@ func chooseInsAndOuts() (string, string, bool) {
 		if len(args) > 0 {
 			configFile = args[0]
 			consumedConfigFileFromArgs = true
-		} else {
-			// Set a default if no config specified (optional)
-			configFile = "config.toml"
-		}
+		} // no need for an else, the default is handled down the line
 	}
 
 	if *outputPtr != "" {
@@ -164,6 +161,14 @@ func chooseInsAndOuts() (string, string, bool) {
 }
 
 func getJobs(workDir fs.FS, confFile string) (confparse.Jobs, error) {
+	if confFile == "" {
+		confFile = "config.d" // just in case, the error should guide people this way
+		_, err := fs.Stat(workDir, "config.toml")
+		if err == nil {
+			// Should default to this file if it exists
+			confFile = "config.toml"
+		}
+	}
 	info, err := fs.Stat(workDir, confFile)
 	if err != nil {
 		return nil, fmt.Errorf("can't stat path %s: %v", confFile, err)
