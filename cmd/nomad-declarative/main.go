@@ -102,6 +102,8 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 				fmt.Printf("%v", fmt.Errorf("failed to parse HCL in %s: %s\n\n%s", outPath, diag.Error(), buffer.Bytes()))
 			}
 			fileWrite(path.Join(job.JobName, outPath), formatted.Bytes())
+		} else {
+			fileWrite(path.Join(job.JobName, outPath), buffer.Bytes())
 		}
 	}
 
