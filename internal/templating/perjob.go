@@ -45,9 +45,6 @@ func internalTemplates(source fs.FS) []string {
 		if d == nil || d.IsDir() {
 			return nil
 		}
-		if d.Name()[0] == '_' {
-			return nil
-		}
 
 		if strings.HasSuffix(d.Name(), ".tpl") {
 			finalTpls = append(finalTpls, entry)
