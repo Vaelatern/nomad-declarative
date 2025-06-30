@@ -66,14 +66,25 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		root = fsys
 	}
 
+	if _, err := fs.Stat(root, "."); err != nil {
+		return fmt.Errorf("Seems like our pack root \"%s\" does not exist", root)
+	}
+
 	packRoot, err := fs.Sub(root, pack)
 	if err != nil {
 		return fmt.Errorf("Error grabbing pack named %s: %v", pack, err)
 	}
 
+	if _, err := fs.Stat(packRoot, "."); err != nil {
+		return fmt.Errorf("Seems like our specific pack root \"%s\" does not exist", packRoot)
+	}
+
 	packTemplates, err := fs.Sub(packRoot, "templates")
 	if err != nil {
 		return fmt.Errorf("Error grabbing pack templates for %s: %v", pack, err)
+	}
+	if _, err := fs.Stat(packTemplates, "."); err != nil {
+		return fmt.Errorf("Seems like we can't find the \"templates\" dir inside our pack root \"%s\"", packRoot)
 	}
 
 	var commonTemplates fs.FS
