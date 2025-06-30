@@ -44,6 +44,15 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		origin = job.Pack["origin"].(string)
 	}
 
+	if strings.HasPrefix(origin, "./") {
+		cwd, err := os.Getwd()
+		if err == nil {
+			origin = "file://" + cwd + "/" + origin
+		} else {
+			return fmt.Errorf("Current Working Directory for origin \"%s\" failed: %v", origin, err)
+		}
+	}
+
 	if origin != DEFAULT_ORIGIN {
 		mux := fsimpl.NewMux()
 		mux.Add(filefs.FS)
