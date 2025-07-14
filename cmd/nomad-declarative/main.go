@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"io"
@@ -101,29 +103,60 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 	var tpl *template.Template
 	tpl, err = templating.Template(packTemplates, commonTemplates)
 	if err != nil {
-		log.Fatal(fmt.Errorf("Can't get template: %v", err))
+		return fmt.Errorf("Can't get template: %v", err)
 	}
 
 	for _, filePath := range tpls {
 		curTpl, _ := tpl.Clone()
 		finalTpl, err := curTpl.ParseFS(packTemplates, filePath)
 		if err != nil {
-			log.Fatal(fmt.Errorf("Can't ParseFS in job %s @ %s, on %s: %v", job.JobName, origin, filePath, err))
+			return fmt.Errorf("Can't ParseFS in job %s @ %s, on %s: %v", job.JobName, origin, filePath, err)
 		}
-		var buffer bytes.Buffer
-		err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
-		if err != nil {
-			log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
-		}
+
+		// Check if the path is to be decoded
 		outPath := filePath[:len(filePath)-len(".tpl")]
-		if strings.HasSuffix(outPath, ".nomad") || strings.HasSuffix(outPath, ".hcl") {
-			formatted, diag := hclwrite.ParseConfig(buffer.Bytes(), "", hcl.Pos{Line: 1, Column: 1})
-			if diag.HasErrors() {
-				fmt.Printf("%v", fmt.Errorf("failed to parse HCL in %s: %s\n\n%s", outPath, diag.Error(), buffer.Bytes()))
+		var nameBuffer *bytes.Buffer
+		if strings.HasPrefix(outPath, "b64(") && strings.HasSuffix(outPath, ")") {
+			encoded := outPath[len("b64(") : len(outPath)-len(")")]
+			decoded, err := base64.StdEncoding.DecodeString(encoded)
+			if err != nil {
+				return fmt.Errorf("failed to decode base64: %v", err)
 			}
-			fileWrite(path.Join(job.JobName, outPath), formatted.Bytes())
+			outPath = string(decoded)
+			nameTpl, _ := curTpl.Clone()
+			nameTpl = nameTpl.Funcs(template.FuncMap{"PASS": jobToPass.Append})
+			nameTpl.Parse(outPath)
+			nameTpl.Execute(nameBuffer, jobToPass)
 		} else {
-			fileWrite(path.Join(job.JobName, outPath), buffer.Bytes())
+			nameBuffer = bytes.NewBufferString(outPath)
+		}
+
+		// Range on newline because it makes it easiest. Scan defaults to ScanLines
+		outNames := bufio.NewScanner(nameBuffer)
+		jobToPass.NameIndex = -1
+		for outNames.Scan() {
+			jobToPass.NameIndex += 1
+			outName := outNames.Text()
+			if outName == "" { // easy escape for bad templating work
+				continue
+			}
+			// Parse job into a buffer...
+			var buffer bytes.Buffer
+			err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
+			if err != nil {
+				log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
+			}
+
+			// Then prepare to write and write it
+			if strings.HasSuffix(outName, ".nomad") || strings.HasSuffix(outName, ".hcl") {
+				formatted, diag := hclwrite.ParseConfig(buffer.Bytes(), "", hcl.Pos{Line: 1, Column: 1})
+				if diag.HasErrors() {
+					fmt.Printf("%v", fmt.Errorf("failed to parse HCL in %s: %s\n\n%s", outName, diag.Error(), buffer.Bytes()))
+				}
+				fileWrite(path.Join(job.JobName, outName), formatted.Bytes())
+			} else {
+				fileWrite(path.Join(job.JobName, outName), buffer.Bytes())
+			}
 		}
 	}
 

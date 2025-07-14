@@ -21,9 +21,17 @@ type Job struct {
 }
 
 type JobAsArgs struct {
-	JobName string
-	Args    map[string]interface{}
-	Pack    PackSettings
+	JobName   string
+	Args      map[string]interface{}
+	Pack      PackSettings
+	FileName  string
+	NameArgs  []interface{}
+	NameIndex int
+}
+
+func (j *JobAsArgs) Append(in any) (string, error) {
+	j.NameArgs = append(j.NameArgs, in)
+	return "", nil
 }
 
 type Jobs map[string]Job
