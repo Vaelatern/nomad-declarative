@@ -46,7 +46,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		origin = job.Pack["origin"].(string)
 	}
 
-	if strings.HasPrefix(origin, "./") || !strings.Contains(path, "://") {
+	if strings.HasPrefix(origin, "./") || !strings.Contains(origin, "://") {
 		cwd, err := os.Getwd()
 		if err == nil {
 			origin = "file://" + cwd + "/" + origin
