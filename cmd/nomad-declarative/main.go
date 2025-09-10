@@ -125,8 +125,15 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 			outPath = string(decoded)
 			nameTpl, _ := curTpl.Clone()
 			nameTpl = nameTpl.Funcs(template.FuncMap{"PASS": jobToPass.Append})
-			nameTpl.Parse(outPath)
-			nameTpl.Execute(nameBuffer, jobToPass)
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Println("Panic parsing template: ", outPath, r)
+					}
+				}()
+				nameTpl.Parse(outPath)
+				nameTpl.Execute(nameBuffer, jobToPass)
+			}()
 		} else {
 			nameBuffer = bytes.NewBufferString(outPath)
 		}
@@ -142,10 +149,17 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 			}
 			// Parse job into a buffer...
 			var buffer bytes.Buffer
-			err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
-			if err != nil {
-				log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
-			}
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Println("Panic parsing template: ", filePath, r)
+					}
+				}()
+				err = finalTpl.ExecuteTemplate(&buffer, filePath, jobToPass)
+				if err != nil {
+					log.Fatal(fmt.Errorf("Can't Execute on %s: %v", filePath, err))
+				}
+			}()
 
 			// Then prepare to write and write it
 			if strings.HasSuffix(outName, ".nomad") || strings.HasSuffix(outName, ".hcl") {
