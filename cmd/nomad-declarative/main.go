@@ -149,11 +149,12 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 		outNames := bufio.NewScanner(nameBuffer)
 		jobToPass.NameIndex = -1
 		for outNames.Scan() {
-			jobToPass.NameIndex += 1
 			outName := outNames.Text()
 			if outName == "" { // easy escape for bad templating work
 				continue
 			}
+			// if a real entry continue
+			jobToPass.NameIndex += 1
 			// Parse job into a buffer...
 			var buffer bytes.Buffer
 			func() {
