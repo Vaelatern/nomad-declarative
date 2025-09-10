@@ -122,6 +122,7 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 			if err != nil {
 				return fmt.Errorf("failed to decode base64: %v", err)
 			}
+			nameBuffer = bytes.NewBuffer([]byte{})
 			outPath = string(decoded)
 			nameTpl, _ := curTpl.Clone()
 			nameTpl = nameTpl.Funcs(template.FuncMap{"PASS": jobToPass.Append})
@@ -131,8 +132,14 @@ func ParseJob(job confparse.Job, root fs.FS, fileWrite func(string, []byte) erro
 						fmt.Println("Panic parsing template: ", outPath, r)
 					}
 				}()
-				nameTpl.Parse(outPath)
-				nameTpl.Execute(nameBuffer, jobToPass)
+				nameTpl, err = nameTpl.Parse(outPath)
+				if err != nil {
+					log.Fatal(fmt.Errorf("Can't Parse name template %s: %v", outPath, err))
+				}
+				err = nameTpl.Execute(nameBuffer, jobToPass)
+				if err != nil {
+					log.Fatal(fmt.Errorf("Can't Execute name template %s: %v", outPath, err))
+				}
 			}()
 		} else {
 			nameBuffer = bytes.NewBufferString(outPath)
