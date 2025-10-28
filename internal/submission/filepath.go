@@ -36,6 +36,7 @@ func ExecuteFilesAsync(compiledDir string) error {
 			go func() {
 				defer wg.Done()
 				cmd := exec.Command("./" + filepath.Base(path))
+				cmd.Args[0] = filepath.Base(path)
 				cmd.Dir = filepath.Dir(path)
 				cmd.Env = os.Environ()
 				fmt.Printf("Executing %s: %v\n", path, cmd)
