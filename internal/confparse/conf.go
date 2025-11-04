@@ -39,9 +39,14 @@ type Jobs map[string]Job
 // ParseTOMLToJobs parses a TOML input from an io.Reader and returns a map of Jobs.
 // It is important for later merging that there are no extra defaults set here.
 func ParseTOMLToJobs(reader io.Reader) (Jobs, error) {
+	wrappedReader, err := TemplateSuperpowers(reader)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to go-template the toml itself: %v", err)
+	}
+
 	// Load the entire TOML data into a generic map
 	var rawConfig map[string]map[string]interface{}
-	if _, err := toml.NewDecoder(reader).Decode(&rawConfig); err != nil {
+	if _, err := toml.NewDecoder(wrappedReader).Decode(&rawConfig); err != nil {
 		return nil, fmt.Errorf("failed to decode TOML: %w", err)
 	}
 
