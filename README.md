@@ -16,6 +16,9 @@ Those Jobs can contain multiple nomad jobs (one per file), variables to apply to
 
 These Packs can come from any reachable origin. We use the [go-fsimpl](https://pkg.go.dev/github.com/hairyhenderson/go-fsimpl) library to ease selection of pack remotes.
 
+Example from a filesystem: `_origin = "file:///opt/declarative-nomad-jobs/packs/"`
+Example from github: `_origin = "git+https://github.com/Vaelatern/declarative-nomad-jobs.git//packs"`
+
 Packs have names. Packs have origins. Packs can have a different name at the origin than we name them ourselves.
 
 Jobs have names. Those have to be unique in the output. That uniqueness is not enforced in the configuration file.
